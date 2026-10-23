@@ -34,7 +34,6 @@
   header { position: fixed; inset: 0 0 auto; z-index: 5; padding: var(--top) 20px 10px; display: flex; align-items: center; gap: 12px;
     background: linear-gradient(var(--bg) 60%, transparent); }
   .brand { font-weight: 700; font-size: 21px; letter-spacing: .2px; }
-  .brand i { color: var(--accent); font-style: normal; }
   .state { flex: 1; display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--dim); min-width: 0; }
   .state span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
@@ -198,7 +197,7 @@
 
 <div id="app" hidden>
   <header>
-    <div class="brand">Lum<i>e</i>n</div>
+    <div class="brand">Lumen</div>
     <div class="state"><span id="dot" class="dot"></span><span id="status">a ligar…</span></div>
     <button class="power press" data-api="power" data-confirm="Desligar a TV?" aria-label="Desligar a TV"><svg><use href="#i-power"/></svg></button>
   </header>
