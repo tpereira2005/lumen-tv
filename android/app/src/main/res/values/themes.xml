@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Fundo escuro desde o primeiro frame, para não haver clarão branco ao abrir. -->
+    <style name="Theme.Lumen" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowDisablePreview">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+    <color name="bg">#0B0D12</color>
+</resources>

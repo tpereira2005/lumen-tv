@@ -1,0 +1,9 @@
+{
+  "name": "Lumen — comando da TV",
+  "short_name": "Lumen",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0C11",
+  "theme_color": "#0A0C11",
+  "icons": [{ "src": "/icon.png", "sizes": "512x512", "type": "image/png" }]
+}

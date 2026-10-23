@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lumen</string>
+    <string name="guard_label">Lumen – botão Home</string>
+    <string name="guard_description">Abre o Lumen sempre que o ecrã inicial da Amazon aparece (arranque, botão Home, ao sair de uma app). Não lê o conteúdo do ecrã.</string>
+</resources>

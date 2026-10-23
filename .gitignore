@@ -1,0 +1,19 @@
+# Compilação Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
+.kotlin/
+
+# Dados pessoais / do equipamento — ficam só na pasta local
+chat/
+diagnostico/
+backup/
+capturas/
+ESTADO.md
+
+# Sistema
+.DS_Store
+Thumbs.db
