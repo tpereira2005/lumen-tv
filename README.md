@@ -26,7 +26,7 @@ Feito para um Fire TV Stick 4K (2.ª geração, Fire OS 8) ligado a uma Hisense 
 | **Loja Lumen** | Apps que não existem na Appstore (Stremio, Nuvio, TiviMate, SmartTube, Kodi, TV Bro, SmartTwitchTV), sempre da origem oficial e com a **assinatura do autor verificada** antes de instalar. Procura atualizações sozinha. |
 | **Topo informativo** | Relógio, meteorologia (Open‑Meteo) e próximo jogo da equipa (ESPN), sem contas nem chaves. |
 | **Ecrã ambiente** | Proteção de ecrã com fotografias do dia em movimento lento, relógio, tempo e próximo jogo. |
-| **Extras** | Pesquisa (também a partir do iPhone), temporizador para desligar, atalho "Jogar" para a PlayStation 5, aviso quando uma atualização do Fire OS mexe em algo. |
+| **Extras** | Pesquisa a partir do iPhone, temporizador para desligar, aviso quando uma atualização do Fire OS mexe em algo. |
 
 <div align="center">
 <img src="docs/img/loja.png" width="420" alt="Loja Lumen"> <img src="docs/img/sistema.png" width="420" alt="Sistema e entradas">

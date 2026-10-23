@@ -272,24 +272,8 @@ fun HomeScreen(state: HomeState, actions: HomeActions) {
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                             contentPadding = PaddingValues(horizontal = Lumen.SidePad, vertical = 10.dp),
                         ) {
-                            item {
-                                ActionTile("Pesquisar", "apps e Loja",
-                                    onFocus = { hero.value = HeroInfo("Pesquisar", "Também pode escrever no iPhone") },
-                                    onClick = { searchText = "" })
-                            }
-                            item {
-                                ActionTile("Comando", "no iPhone",
-                                    modifier = Modifier.focusRequester(requester("sys:comando")),
-                                    onFocus = { hero.value = HeroInfo("Comando no iPhone", "Setas, volume, entradas e apps no telemóvel") },
-                                    onClick = { showRemote = true })
-                            }
-                            state.tv.sources.firstOrNull { it.name == "HDMI4" }?.let { ps5 ->
-                                item {
-                                    ActionTile("Jogar", "PlayStation 5",
-                                        onFocus = { hero.value = HeroInfo("Jogar na PlayStation 5", "Muda a TV para a PS5. Para voltar: Home no comando do Fire TV") },
-                                        onClick = { actions.changeSource(ps5) })
-                                }
-                            }
+                            // Ordem: Definições, Loja Lumen, Comando, Temporizador, Ecrã Amazon, Apps ocultas.
+                            // (A pesquisa continua acessível pelo comando do iPhone; a PS5 está em "Entradas da TV".)
                             item {
                                 ActionTile("Definições", "Fire TV", onFocus = { hero.value = HeroInfo("Definições", "Fire TV") },
                                     onClick = actions::openSettings)
@@ -299,13 +283,14 @@ fun HomeScreen(state: HomeState, actions: HomeActions) {
                                     when (storeUpdates) { 0 -> "apps verificadas"; 1 -> "1 atualização"; else -> "$storeUpdates atualizações" },
                                     dot = if (storeUpdates > 0) Lumen.Accent else null,
                                     modifier = Modifier.focusRequester(requester("sys:loja")),
-                                    onFocus = { hero.value = HeroInfo("Loja Lumen", "Stremio · SmartTube · Kodi · VLC") },
+                                    onFocus = { hero.value = HeroInfo("Loja Lumen", "Stremio · Nuvio · TiviMate · SmartTube · Kodi…") },
                                     onClick = { showStore = true })
                             }
                             item {
-                                ActionTile("Apps ocultas", "${hiddenApps.size} " + if (showHidden) "· esconder" else "· mostrar",
-                                    onFocus = { hero.value = HeroInfo("Apps ocultas", "Não são desinstaladas — só saem do ecrã inicial") },
-                                    onClick = { showHidden = !showHidden })
+                                ActionTile("Comando", "no iPhone",
+                                    modifier = Modifier.focusRequester(requester("sys:comando")),
+                                    onFocus = { hero.value = HeroInfo("Comando no iPhone", "Setas, volume, entradas e apps no telemóvel") },
+                                    onClick = { showRemote = true })
                             }
                             item {
                                 ActionTile("Temporizador",
@@ -318,6 +303,11 @@ fun HomeScreen(state: HomeState, actions: HomeActions) {
                                 ActionTile("Ecrã Amazon", "abrir por 10 min",
                                     onFocus = { hero.value = HeroInfo("Ecrã inicial da Amazon", "O Lumen volta quando sair") },
                                     onClick = actions::openAmazonHome)
+                            }
+                            item {
+                                ActionTile("Apps ocultas", "${hiddenApps.size} " + if (showHidden) "· esconder" else "· mostrar",
+                                    onFocus = { hero.value = HeroInfo("Apps ocultas", "Não são desinstaladas — só saem do ecrã inicial") },
+                                    onClick = { showHidden = !showHidden })
                             }
                         }
                     }
