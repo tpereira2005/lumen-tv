@@ -79,7 +79,14 @@ class RemoteServer(private val context: Context) {
 
         // Ficheiros da página (públicos; não fazem nada sem o código).
         when (path) {
-            "/", "/index.html" -> return asset(out, "remote/index.html", "text/html; charset=utf-8")
+            "/", "/index.html" -> {
+                // Com o código, a página já sai com o manifesto certo: o Safari lê-o ao carregar,
+                // antes de qualquer script, e é dele que tira o endereço da app do ecrã principal.
+                if (query["t"] != token) return asset(out, "remote/index.html", "text/html; charset=utf-8")
+                val html = context.assets.open("remote/index.html").bufferedReader().use { it.readText() }
+                    .replace("""href="/manifest.json"""", """href="/manifest.json?t=$token"""")
+                return respond(out, 200, "text/html; charset=utf-8", html)
+            }
             "/manifest.json" -> {
                 // Com o código, a app adicionada ao ecrã principal abre já com ele (no iOS não partilha o armazenamento do Safari).
                 if (query["t"] != token) return asset(out, "remote/manifest.json", "application/manifest+json")
