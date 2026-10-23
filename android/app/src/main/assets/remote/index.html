@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Barra de estado opaca: o iOS 26 desfoca o que fica por baixo dela nas apps do ecrã principal. -->
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lumen">
 <meta name="theme-color" content="#08090D">
 <link rel="manifest" href="/manifest.json">
@@ -31,8 +32,8 @@
   .press:active { transform: scale(.95); }
 
   /* Topo */
-  header { position: fixed; inset: 0 0 auto; z-index: 5; padding: var(--top) 20px 10px; display: flex; align-items: center; gap: 12px;
-    background: linear-gradient(var(--bg) 60%, transparent); }
+  /* Topo no fluxo normal (não fixo): o comando cabe no ecrã sem deslocar. */
+  header { max-width: 480px; margin: 0 auto; padding: var(--top) 20px 10px; display: flex; align-items: center; gap: 12px; }
   .brand { font-weight: 700; font-size: 21px; letter-spacing: .2px; }
   .state { flex: 1; display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--dim); min-width: 0; }
   .state span:last-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -40,7 +41,7 @@
   .dot.on { background: var(--ok); box-shadow: 0 0 0 3px rgba(76,215,135,.16); }
   .power { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,90,95,.12); color: var(--red); }
 
-  main { padding: calc(var(--top) + 62px) 20px calc(var(--bottom) + 96px); max-width: 480px; margin: 0 auto; }
+  main { padding: 12px 20px calc(var(--bottom) + 96px); max-width: 480px; margin: 0 auto; }
   [hidden] { display: none !important; }
   h2 { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--faint); font-weight: 600; margin: 26px 4px 10px; }
 
