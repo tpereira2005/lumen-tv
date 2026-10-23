@@ -80,7 +80,13 @@ class RemoteServer(private val context: Context) {
         // Ficheiros da página (públicos; não fazem nada sem o código).
         when (path) {
             "/", "/index.html" -> return asset(out, "remote/index.html", "text/html; charset=utf-8")
-            "/manifest.json" -> return asset(out, "remote/manifest.json", "application/manifest+json")
+            "/manifest.json" -> {
+                // Com o código, a app adicionada ao ecrã principal abre já com ele (no iOS não partilha o armazenamento do Safari).
+                if (query["t"] != token) return asset(out, "remote/manifest.json", "application/manifest+json")
+                val json = JSONObject(context.assets.open("remote/manifest.json").bufferedReader().use { it.readText() })
+                    .put("start_url", "/?t=$token")
+                return respond(out, 200, "application/manifest+json", json.toString())
+            }
             "/icon.png" -> return asset(out, "remote/icon.png", "image/png")
         }
         val auth = headers["x-lumen-token"] ?: query["t"]

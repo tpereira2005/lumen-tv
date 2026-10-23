@@ -2,7 +2,7 @@
 <html lang="pt-PT">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,6 +19,8 @@
     --top: max(env(safe-area-inset-top), 12px); --bottom: env(safe-area-inset-bottom);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  /* Sem zoom: só deslocar (nem pinça nem duplo toque); a superfície tátil usa touch-action: none. */
+  html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); overscroll-behavior: none;
     font: 15px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
   body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
@@ -40,7 +42,7 @@
   .power { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,90,95,.12); color: var(--red); }
 
   main { padding: calc(var(--top) + 62px) 20px calc(var(--bottom) + 96px); max-width: 480px; margin: 0 auto; }
-  section[hidden] { display: none !important; }
+  [hidden] { display: none !important; }
   h2 { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--faint); font-weight: 600; margin: 26px 4px 10px; }
 
   /* Superfície tátil */
@@ -281,14 +283,19 @@
 </div>
 
 <div class="locked" id="locked" hidden><div><svg><use href="#i-lock"/></svg><b>Ler o QR code</b>
-  Abra este comando pelo QR code no Lumen: <br>Sistema → Comando.</div></div>
+  Leia o QR code no Lumen (Sistema → Comando) com a câmara. Para o ter no ecrã principal, adicione‑o a partir dessa página no Safari.</div></div>
 <div class="toast" id="toast"></div>
 
 <script>
-  // O código vem do QR code (?t=...) e fica guardado neste iPhone.
+  // O código vem do QR code (?t=...) e fica guardado neste iPhone. Fica também no endereço e no manifesto:
+  // no iOS, a app adicionada ao ecrã principal não partilha o armazenamento do Safari e abre o endereço guardado.
   const params = new URLSearchParams(location.search);
-  if (params.get('t')) { localStorage.setItem('lumen-token', params.get('t')); history.replaceState(null, '', '/'); }
-  const token = localStorage.getItem('lumen-token');
+  if (params.get('t')) localStorage.setItem('lumen-token', params.get('t'));
+  const token = params.get('t') || localStorage.getItem('lumen-token');
+  if (token) {
+    if (!params.get('t')) history.replaceState(null, '', '/?t=' + encodeURIComponent(token));
+    document.querySelector('link[rel=manifest]').href = '/manifest.json?t=' + encodeURIComponent(token);
+  }
   const $ = id => document.getElementById(id);
   const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const NAMES = { HDMI1: 'Fire TV', HDMI4: 'PlayStation 5', TV: 'Televisão' };
@@ -355,6 +362,11 @@
   });
   document.addEventListener('contextmenu', e => e.preventDefault());
 
+  // O Safari ignora user-scalable=no: bloqueia a pinça (gestos do iOS e dois dedos).
+  // O duplo toque já não faz zoom por causa do touch-action (e assim dois toques rápidos contam os dois).
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
+  document.addEventListener('touchmove', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+
   // Superfície tátil: deslizar = setas (uma tecla por cada ~38 px), tocar = OK.
   const surface = $('surface');
   const ARROW = { up: [0, -1, 0], down: [0, 1, 180], left: [-1, 0, -90], right: [1, 0, 90] };
@@ -362,9 +374,9 @@
   function setMode(pad) {
     surface.classList.toggle('pad', pad);
     $('mode').innerHTML = pad ? '<svg><use href="#i-swipe"/></svg><span>Deslizar</span>' : '<svg><use href="#i-dpad"/></svg><span>Setas</span>';
-    try { localStorage.setItem('lumen-pad', pad ? '1' : ''); } catch (_) {}
+    try { localStorage.setItem('lumen-mode', pad ? 'setas' : 'deslizar'); } catch (_) {}
   }
-  setMode(!!localStorage.getItem('lumen-pad'));
+  setMode(localStorage.getItem('lumen-mode') !== 'deslizar'); // por omissão: setas
   $('mode').addEventListener('click', () => { haptic(); setMode(!surface.classList.contains('pad')); });
 
   function flash(dir) {
