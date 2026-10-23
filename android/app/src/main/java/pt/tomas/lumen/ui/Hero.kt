@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
@@ -106,21 +107,21 @@ fun TopBar(infoState: State<HeroInfo>, tv: TvState, extra: Info, modifier: Modif
     // Altura fixa: o indicador de volume flutua por baixo do relógio sem mudar o tamanho do topo,
     // por isso o título e as linhas nunca saltam quando ele aparece ou desaparece.
     Box(modifier.fillMaxWidth().height(TOP_BAR_HEIGHT).padding(start = Lumen.SidePad, end = Lumen.SidePad, top = 26.dp, bottom = 4.dp)) {
-        Column(Modifier.align(Alignment.BottomStart).padding(end = 260.dp)) {
-            Text(
-                (info.subtitle ?: " ").uppercase(Lumen.PT), color = lighten(info.accent), fontSize = 11.sp,
-                letterSpacing = 1.6.sp, fontWeight = FontWeight.Medium, maxLines = 1,
-            )
-            Text(
-                info.title, color = Lumen.Text, fontSize = 30.sp, fontWeight = FontWeight.SemiBold,
-                maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp),
-            )
-        }
-        Row(Modifier.align(Alignment.TopEnd), verticalAlignment = Alignment.Top) {
-            WeatherBlock(extra)
-            Column(horizontalAlignment = Alignment.End) {
-                Clock()
-                MatchLine(extra)
+        Row(Modifier.fillMaxSize()) {
+            Column(Modifier.weight(1f).align(Alignment.Bottom).padding(end = 24.dp)) {
+                Text(
+                    (info.subtitle ?: " ").uppercase(Lumen.PT), color = lighten(info.accent), fontSize = 11.sp,
+                    letterSpacing = 1.6.sp, fontWeight = FontWeight.Medium, maxLines = 1,
+                )
+                Text(
+                    info.title, color = Lumen.Text, fontSize = 30.sp, fontWeight = FontWeight.SemiBold,
+                    maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            Row(Modifier.align(Alignment.Top), verticalAlignment = Alignment.Top) {
+                MatchCard(extra)
+                WeatherBlock(extra)
+                Column(horizontalAlignment = Alignment.End) { Clock() }
             }
         }
         VolumePill(tv, Modifier.align(Alignment.TopEnd).offset(y = 92.dp))
@@ -211,34 +212,93 @@ private fun WeatherBlock(info: Info) {
     }
 }
 
-/** Próximo jogo (ou em direto, ou o último resultado se foi há pouco) da equipa. */
+/**
+ * Cartão do jogo ao lado do tempo: escudos e "×" antes do jogo, o resultado depois.
+ * Durante o jogo fica no mesmo sítio, maior e com "ao vivo" e o minuto a vermelho (atualiza a cada minuto).
+ */
 @Composable
-private fun MatchLine(info: Info) {
-    val now = System.currentTimeMillis()
-    val next = info.next
-    val last = info.last
-    val text = when {
-        next != null && next.live -> "🔴 ${teams(info.team, next, next.score)} · ao vivo"
-        last != null && now - last.time.time < 36 * 3_600_000L -> "⚽ ${teams(info.team, last, last.score)} · final"
-        next != null -> "⚽ ${teams(info.team, next, null)} · ${whenText(next.time)}"
-        else -> return
+private fun MatchCard(info: Info) {
+    val live = info.next?.takeIf { it.live }
+    val last = info.last?.takeIf { System.currentTimeMillis() - it.time.time < 36 * 3_600_000L }
+    val m = live ?: last ?: info.next ?: return
+    val (left, right) = sides(info.team, m)
+    val crest = if (live != null) 36.dp else 30.dp
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = 22.dp, top = if (live != null) 2.dp else 6.dp)) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Crest(left, crest)
+                Text(
+                    if (m.score != null) oriented(m) else "×",
+                    color = if (m.score != null) Lumen.Text else Lumen.TextDim,
+                    fontSize = if (live != null) 28.sp else 22.sp,
+                    fontWeight = if (live != null) FontWeight.SemiBold else FontWeight.Light,
+                    modifier = Modifier.padding(horizontal = if (live != null) 12.dp else 10.dp),
+                )
+                Crest(right, crest)
+            }
+            if (live != null) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 3.dp)) {
+                    Box(Modifier.size(6.dp).clip(CircleShape).background(LIVE_RED))
+                    Text(
+                        "ao vivo${live.minute?.let { " · $it" }.orEmpty()}".uppercase(Lumen.PT),
+                        color = Color(0xFFFF9DA0), fontSize = 10.sp, letterSpacing = 1.2.sp, fontWeight = FontWeight.SemiBold,
+                        maxLines = 1, modifier = Modifier.padding(start = 6.dp),
+                    )
+                }
+            } else {
+                Text(
+                    "${m.opponent} · ${if (last != null) "final" else whenText(m.time)}".uppercase(Lumen.PT),
+                    color = Lumen.TextFaint, fontSize = 10.sp, letterSpacing = 1.2.sp, maxLines = 1,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+            }
+        }
+        Box(Modifier.padding(start = 22.dp).width(1.dp).height(40.dp).background(Color.White.copy(alpha = 0.12f)))
     }
-    Text(text, color = Lumen.TextDim, fontSize = 11.sp, modifier = Modifier.padding(top = 3.dp), maxLines = 1)
 }
 
-private fun teams(team: String, m: Match, score: String?): String {
-    val sep = score ?: "×"
-    return if (m.home) "$team $sep ${m.opponent}" else "${m.opponent} ${score?.split('–')?.reversed()?.joinToString("–") ?: sep} $team"
+private val LIVE_RED = Color(0xFFFF4D55)
+
+private class Side(val name: String, val crest: android.graphics.Bitmap?)
+
+/** Equipa da casa à esquerda, como nos placards. */
+private fun sides(team: String, m: Match): Pair<Side, Side> {
+    val us = Side(team, m.teamCrest)
+    val them = Side(m.opponent, m.opponentCrest)
+    return if (m.home) us to them else them to us
 }
 
+/** Resultado pela ordem casa–fora ("score" vem como nós–eles). */
+private fun oriented(m: Match): String {
+    val parts = m.score?.split('–') ?: return "×"
+    return (if (m.home) parts else parts.reversed()).joinToString(" – ")
+}
+
+/** Escudo da equipa; sem imagem, um círculo com a inicial. */
+@Composable
+private fun Crest(side: Side, size: androidx.compose.ui.unit.Dp) {
+    val bmp = side.crest
+    if (bmp != null) {
+        val image = remember(bmp) { bmp.asImageBitmap() }
+        Image(image, side.name, Modifier.size(size), filterQuality = FilterQuality.Medium)
+    } else {
+        Box(Modifier.size(size).clip(CircleShape).background(Lumen.SurfaceHi), contentAlignment = Alignment.Center) {
+            Text(side.name.take(1), color = Lumen.TextDim, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+/** "hoje 18:45", "amanhã 18:45", "seg 18:45" (na próxima semana) ou "2 nov 18:45". */
 private fun whenText(d: Date): String {
     val cal = java.util.Calendar.getInstance()
     val today = cal.get(java.util.Calendar.DAY_OF_YEAR)
     cal.time = d
     val hm = SimpleDateFormat("HH:mm", Lumen.PT).format(d)
-    return when (cal.get(java.util.Calendar.DAY_OF_YEAR) - today) {
-        0 -> "hoje $hm"
-        1 -> "amanhã $hm"
-        else -> SimpleDateFormat("EEE d MMM", Lumen.PT).format(d).replace(".", "") + " $hm"
+    val days = cal.get(java.util.Calendar.DAY_OF_YEAR) - today
+    return when {
+        days == 0 -> "hoje $hm"
+        days == 1 -> "amanhã $hm"
+        days in 2..6 -> SimpleDateFormat("EEE", Lumen.PT).format(d).replace(".", "") + " $hm"
+        else -> SimpleDateFormat("d MMM", Lumen.PT).format(d).replace(".", "") + " $hm"
     }
 }

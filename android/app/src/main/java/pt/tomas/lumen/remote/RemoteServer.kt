@@ -2,7 +2,9 @@ package pt.tomas.lumen.remote
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.util.Log
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.toArgb
 import org.json.JSONArray
 import org.json.JSONObject
@@ -10,6 +12,7 @@ import pt.tomas.lumen.MainActivity
 import pt.tomas.lumen.lumen
 import pt.tomas.lumen.tv.TvSource
 import java.io.BufferedReader
+import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.InetAddress
@@ -18,6 +21,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.URLDecoder
 import java.security.SecureRandom
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
 /**
@@ -82,11 +86,16 @@ class RemoteServer(private val context: Context) {
         val auth = headers["x-lumen-token"] ?: query["t"]
         if (auth != token) return respond(out, 401, "application/json", """{"erro":"código inválido"}""")
         if (method != "GET" && method != "POST") return respond(out, 405, "text/plain", "")
+        if (path == "/api/art") return art(out, query["pkg"].orEmpty())
 
         val result: Any = when (path) {
             "/api/state" -> state()
             "/api/key" -> key(query["k"].orEmpty())
-            "/api/volume" -> { context.lumen.tv.volumeStep(query["d"]?.toIntOrNull() ?: 0); ok() }
+            "/api/volume" -> {
+                val set = query["set"]?.toIntOrNull()
+                if (set != null) context.lumen.tv.setVolume(set) else context.lumen.tv.volumeStep(query["d"]?.toIntOrNull() ?: 0)
+                ok()
+            }
             "/api/mute" -> { context.lumen.tv.toggleMute(); ok() }
             "/api/power" -> { context.lumen.tv.powerOffIfOn(); ok() }
             "/api/source" -> source(query["id"].orEmpty())
@@ -97,6 +106,17 @@ class RemoteServer(private val context: Context) {
             else -> return respond(out, 404, "application/json", """{"erro":"não existe"}""")
         }
         respond(out, 200, "application/json; charset=utf-8", result.toString())
+    }
+
+    /** Banner (ou ícone) da app em PNG, para os favoritos no iPhone; guardado depois da primeira vez. */
+    private val artCache = ConcurrentHashMap<String, ByteArray>()
+
+    private fun art(out: OutputStream, pkg: String) {
+        val app = context.lumen.apps.apps.value.firstOrNull { it.pkg == pkg } ?: return respond(out, 404, "text/plain", "")
+        val bytes = artCache.getOrPut(pkg) {
+            ByteArrayOutputStream().also { (app.banner ?: app.icon).asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+        }
+        respond(out, 200, "image/png", bytes, cache = true)
     }
 
     private fun ok() = JSONObject().put("ok", true)
@@ -142,7 +162,7 @@ class RemoteServer(private val context: Context) {
         val byPkg = app.apps.apps.value.associateBy { it.pkg }
         val favs = JSONArray()
         app.prefs.favorites.value.mapNotNull { byPkg[it] }.forEach { a ->
-            favs.put(JSONObject().put("pkg", a.pkg).put("nome", a.label).put("cor", "#%06X".format(a.accent.toArgb() and 0xFFFFFF)))
+            favs.put(JSONObject().put("pkg", a.pkg).put("nome", a.label).put("cor", "#%06X".format(a.accent.toArgb() and 0xFFFFFF)).put("banner", a.banner != null))
         }
         val sources = JSONArray()
         tv.sources.forEach { sources.put(JSONObject().put("id", it.id).put("nome", it.name).put("sinal", it.hasSignal)) }
@@ -159,9 +179,9 @@ class RemoteServer(private val context: Context) {
 
     private fun respond(out: OutputStream, code: Int, type: String, body: String) = respond(out, code, type, body.toByteArray())
 
-    private fun respond(out: OutputStream, code: Int, type: String, body: ByteArray) {
+    private fun respond(out: OutputStream, code: Int, type: String, body: ByteArray, cache: Boolean = false) {
         val status = mapOf(200 to "OK", 401 to "Unauthorized", 403 to "Forbidden", 404 to "Not Found", 405 to "Method Not Allowed")[code] ?: "OK"
-        out.write("HTTP/1.1 $code $status\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray())
+        out.write("HTTP/1.1 $code $status\r\nContent-Type: $type\r\nContent-Length: ${body.size}\r\nCache-Control: ${if (cache) "private, max-age=86400" else "no-store"}\r\nConnection: close\r\n\r\n".toByteArray())
         out.write(body)
         out.flush()
     }

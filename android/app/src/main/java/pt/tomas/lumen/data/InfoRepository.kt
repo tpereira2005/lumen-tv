@@ -1,5 +1,7 @@
 package pt.tomas.lumen.data
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +29,11 @@ data class Match(
     /** "2–0" quando já terminou; null se ainda não se jogou. */
     val score: String? = null,
     val live: Boolean = false,
+    /** Durante o jogo: "67'", "45'+2'" ou "Intervalo". */
+    val minute: String? = null,
+    /** Escudos (≈125 px), ou null se não foi possível descarregar. */
+    val teamCrest: Bitmap? = null,
+    val opponentCrest: Bitmap? = null,
 )
 
 data class Info(val city: String, val weather: Weather? = null, val team: String, val next: Match? = null, val last: Match? = null)
@@ -59,9 +66,10 @@ class InfoRepository(
                     val (next, last) = fetchMatches()
                     _info.value = _info.value.copy(next = next, last = last)
                 }.onFailure { Log.w(TAG, "Futebol: $it") }
-                // Em dia de jogo atualiza mais vezes (resultado em direto).
-                val soon = _info.value.next?.let { kotlin.math.abs(it.time.time - System.currentTimeMillis()) < 3 * 3_600_000L } == true
-                delay(if (soon) 2 * 60_000L else 2 * 3_600_000L)
+                // Em dia de jogo atualiza mais vezes; durante o jogo, a cada minuto (placard em direto).
+                val next = _info.value.next
+                val soon = next?.let { kotlin.math.abs(it.time.time - System.currentTimeMillis()) < 3 * 3_600_000L } == true
+                delay(if (next?.live == true) 60_000L else if (soon) 2 * 60_000L else 2 * 3_600_000L)
             }
         }
     }
@@ -102,7 +110,9 @@ class InfoRepository(
         val teams = comp.getJSONArray("competitors")
         val us = (0 until teams.length()).map { teams.getJSONObject(it) }.first { it.getJSONObject("team").getString("id") == espnTeamId.toString() }
         val them = (0 until teams.length()).map { teams.getJSONObject(it) }.first { it !== us }
-        val state = comp.getJSONObject("status").getJSONObject("type").getString("state") // pre / in / post
+        val status = comp.getJSONObject("status")
+        val type = status.getJSONObject("type")
+        val state = type.getString("state") // pre / in / post
         fun score(c: JSONObject) = c.opt("score").let { if (it is JSONObject) it.optString("displayValue") else it?.toString() }.orEmpty()
         return Match(
             opponent = them.getJSONObject("team").optString("shortDisplayName", them.getJSONObject("team").getString("displayName")),
@@ -111,7 +121,32 @@ class InfoRepository(
             competition = e.optJSONObject("league")?.optString("abbreviation").orEmpty().ifEmpty { "Liga" },
             score = if (state == "pre") null else "${score(us)}–${score(them)}",
             live = state == "in",
+            minute = when {
+                state != "in" -> null
+                type.optString("name") == "STATUS_HALFTIME" -> "Intervalo"
+                else -> status.optString("displayClock").ifEmpty { null }
+            },
+            teamCrest = crest(us.getJSONObject("team")),
+            opponentCrest = crest(them.getJSONObject("team")),
         )
+    }
+
+    /** Escudos guardados em memória por endereço: descarregam-se uma vez por arranque. */
+    private val crests = HashMap<String, Bitmap>()
+
+    private fun crest(team: JSONObject): Bitmap? {
+        val url = team.optJSONArray("logos")?.optJSONObject(0)?.optString("href")?.ifEmpty { null }
+            ?: team.optString("logo").ifEmpty { return null }
+        crests[url]?.let { return it }
+        return runCatching {
+            val c = URL(url).openConnection() as HttpURLConnection
+            c.connectTimeout = 8_000
+            c.readTimeout = 10_000
+            // Os originais têm 500 px; 1/4 chega para o topo e poupa memória.
+            val bmp = try { c.inputStream.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = 4 }) } }
+                finally { c.disconnect() }
+            bmp?.also { crests[url] = it }
+        }.onFailure { Log.w(TAG, "Escudo: $it") }.getOrNull()
     }
 
     private val iso = SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }

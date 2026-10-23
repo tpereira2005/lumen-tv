@@ -65,6 +65,13 @@ class TvRemote(private val context: Context, private val hostProvider: () -> Str
         publish("platform_service", "changevolume", target.toString())
     }
 
+    /** Volume absoluto (barra do comando do iPhone). */
+    fun setVolume(value: Int) = launch {
+        val target = value.coerceIn(0, 100)
+        _state.value = _state.value.copy(volume = target, muted = false)
+        publish("platform_service", "changevolume", target.toString())
+    }
+
     fun toggleMute() = launch { publish("remote_service", "sendkey", "KEY_MUTE") }
 
     /** Tecla do comando da TV; setas/OK/Voltar seguem por CEC para o Fire TV (testado). */

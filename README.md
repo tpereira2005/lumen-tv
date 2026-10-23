@@ -22,9 +22,9 @@ Feito para um Fire TV Stick 4K (2.ª geração, Fire OS 8) ligado a uma Hisense 
 |---|---|
 | **Ecrã inicial próprio** | Substitui o da Amazon ao arrancar e no botão Home. Favoritos, recentes, todas as apps — tudo reordenável, com apps ocultáveis. Fundo "aurora" com a cor da app em foco. |
 | **Integração com a TV** | Volume, silêncio, entradas HDMI e energia da TV Hisense pela rede (MQTT). A TV desliga quando o Fire TV adormece e liga por CEC ao tocar no comando. |
-| **Comando no iPhone** | Página servida pelo próprio Lumen (QR code no ecrã). Setas, OK, Voltar, volume, entradas, favoritos e pesquisa — funciona em **qualquer** app, porque as teclas vão para a TV e seguem por HDMI‑CEC para o Fire TV. Adiciona‑se ao ecrã principal como uma app. |
+| **Comando no iPhone** | Página servida pelo próprio Lumen (QR code no ecrã): superfície tátil (deslizar = setas, tocar = OK) ou setas clássicas, volume com barra, entradas, favoritos com os banners das apps e pesquisa — funciona em **qualquer** app, porque as teclas vão para a TV e seguem por HDMI‑CEC para o Fire TV. Adiciona‑se ao ecrã principal como uma app. |
 | **Loja Lumen** | Apps que não existem na Appstore (Stremio, Nuvio, TiviMate, SmartTube, Kodi, TV Bro, SmartTwitchTV), sempre da origem oficial e com a **assinatura do autor verificada** antes de instalar. Procura atualizações sozinha. |
-| **Topo informativo** | Relógio, meteorologia (Open‑Meteo) e próximo jogo da equipa (ESPN), sem contas nem chaves. |
+| **Topo informativo** | Relógio, meteorologia (Open‑Meteo) e jogo da equipa com escudos (ESPN): próximo jogo, resultado ao vivo com o minuto e resultado final. Sem contas nem chaves. |
 | **Ecrã ambiente** | Proteção de ecrã com fotografias do dia em movimento lento, relógio, tempo e próximo jogo. |
 | **Extras** | Pesquisa a partir do iPhone, temporizador para desligar, aviso quando uma atualização do Fire OS mexe em algo. |
 
