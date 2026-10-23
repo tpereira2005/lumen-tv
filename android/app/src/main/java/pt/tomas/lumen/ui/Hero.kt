@@ -137,13 +137,7 @@ private fun Clock() {
             delay(60_000L - System.currentTimeMillis() % 60_000L)
         }
     }
-    val hm = SimpleDateFormat("HH:mm", Lumen.PT).format(now).split(':')
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(hm[0], color = Lumen.Text, fontSize = 38.sp, fontWeight = FontWeight.Light)
-        // Os dois pontos na cor de destaque: um pequeno toque de identidade.
-        Text(":", color = Lumen.Accent, fontSize = 38.sp, fontWeight = FontWeight.Light, modifier = Modifier.padding(horizontal = 1.dp))
-        Text(hm[1], color = Lumen.Text, fontSize = 38.sp, fontWeight = FontWeight.Light)
-    }
+    Text(SimpleDateFormat("HH:mm", Lumen.PT).format(now), color = Lumen.Text, fontSize = 38.sp, fontWeight = FontWeight.Light)
     Text(
         SimpleDateFormat("EEEE · d MMM", Lumen.PT).format(now).replace(".", "").uppercase(Lumen.PT),
         color = Lumen.TextDim, fontSize = 11.sp, letterSpacing = 1.6.sp, fontWeight = FontWeight.Medium,
